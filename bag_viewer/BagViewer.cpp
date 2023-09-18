@@ -204,7 +204,11 @@ void BagViewer::updateImage(int n) {
   if (currentActiveTopic->messageType() == "sensor_msgs/Image") {
     sensor_msgs::Image::ConstPtr imageMsg =
         currentActiveTopic->at<sensor_msgs::Image>(n);
-    currentImage =
+    if imageMsg->encoding=="16UC1" {
+	auto _im16 = cv_bridge::toCvCopy(imageMsg, "mono16")->image.convertTo(CV_32FC1) * (255.0/65535.0);
+	_im16.convertTo(currentImage, CV_8UC1);
+    }
+    else currentImage =
         cv_bridge::toCvCopy(imageMsg, sensor_msgs::image_encodings::RGB8)
             ->image;
 

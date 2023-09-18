@@ -69,7 +69,18 @@ public:
 
 		if (bagSrc->messageType() == "sensor_msgs/Image") {
 			sensor_msgs::Image::ConstPtr imageMsg = bagSrc->at<sensor_msgs::Image>(i);
-			igbo.image = cv_bridge::toCvCopy(imageMsg, sensor_msgs::image_encodings::RGB8)->image;
+			if (imageMsg->encoding=="16UC1") {
+				auto p = const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(imageMsg->data.data()));
+				cv::Mat buf16(imageMsg->height, imageMsg->width, CV_16UC1, p);
+				cv::Mat _image;
+				buf16.convertTo(_image, CV_32FC1);
+				_image *= (255.0/65535);
+				_image.convertTo(igbo.image, CV_8UC1);
+				cv::cvtColor(igbo.image, igbo.image, cv::COLOR_GRAY2BGR);
+			}
+			else {
+				igbo.image = cv_bridge::toCvCopy(imageMsg, sensor_msgs::image_encodings::RGB8)->image;
+			}
 		}
 		else if (bagSrc->messageType() == "sensor_msgs/CompressedImage") {
 			sensor_msgs::CompressedImage::ConstPtr imageMsg = bagSrc->at<sensor_msgs::CompressedImage>(i);
