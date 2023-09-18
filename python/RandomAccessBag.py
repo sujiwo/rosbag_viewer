@@ -156,10 +156,17 @@ class ImageBag(RandomAccessBag):
         
     def __getitem__(self, i):
         entryMsg = RandomAccessBag.__getitem__(self, i)
-        if (self.isCompressed):
-            return self.bridge.compressed_imgmsg_to_cv2(entryMsg, "bgr8")
+        if entryMsg.encoding=='16UC1':
+            # convert to matrix
+            imagebuf = np.frombuffer(entryMsg.data, dtype=np.uint16).reshape((entryMsg.height, entryMsg.width))
+            # rescaling
+            imagebuf = (imagebuf.astype(np.float32) * (255.0/65535.0)).astype(np.uint8)
+            return imagebuf
         else:
-            return self.bridge.imgmsg_to_cv2(entryMsg, "bgr8")
+            if (self.isCompressed):
+                return self.bridge.compressed_imgmsg_to_cv2(entryMsg, "bgr8")
+            else:
+                return self.bridge.imgmsg_to_cv2(entryMsg, "bgr8")
         
     def __repr__(self):
         return "ROS Image Bag, topic=`{}'".format(self.topic())
